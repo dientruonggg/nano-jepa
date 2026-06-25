@@ -10,6 +10,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import yaml
+from tqdm import tqdm
 
 from app.vjepa.transforms import make_transforms
 from app.vjepa.utils import init_opt, init_video_model
@@ -322,7 +323,8 @@ def execute_training_work(fname):
         gpu_time_meter = AverageMeter()
         wall_time_meter = AverageMeter()
 
-        for itr in range(ipe):
+        pbar = tqdm(range(ipe), desc=f'Epoch {epoch + 1}/{num_epochs}', leave=True, bar_format='{l_bar}{bar:40}{r_bar}')
+        for itr in pbar:
             itr_start_time = time.time()
 
             try:
@@ -470,58 +472,13 @@ def execute_training_work(fname):
                     grad_stats_pred.global_norm,
                     gpu_etime_ms,
                     iter_elapsed_time_ms)
-                if (itr % log_freq == 0) or np.isnan(loss) or np.isinf(loss):
-                    logger.info(
-                        '[%d, %5d] loss: %.3f | p%.3f r%.3f | '
-                        'input_var: %.3f %.3f | '
-                        'masks: %s '
-                        '[wd: %.2e] [lr: %.2e] '
-                        '[mem: %.2e] '
-                        '[gpu: %.1f ms]'
-                        '[wall: %.1f ms]'
-                        % (epoch + 1, itr,
-                           loss_meter.avg,
-                           jepa_loss_meter.avg,
-                           reg_loss_meter.avg,
-                           input_var_meter.avg,
-                           input_var_min_meter.avg,
-                           '[' + ', '.join(['%.1f' % m.avg for m in mask_meters]) + ']',
-                           _new_wd,
-                           _new_lr,
-                           torch.cuda.max_memory_allocated() / 1024.0 ** 2,
-                           gpu_time_meter.avg,
-                           wall_time_meter.avg))
-
-                    if optim_stats is not None:
-                        logger.info(
-                            '[%d, %5d] first moment: %.2e [%.2e %.2e] second moment: %.2e [%.2e %.2e]'
-                            % (epoch + 1, itr,
-                               optim_stats.get('exp_avg').avg,
-                               optim_stats.get('exp_avg').min,
-                               optim_stats.get('exp_avg').max,
-                               optim_stats.get('exp_avg_sq').avg,
-                               optim_stats.get('exp_avg_sq').min,
-                               optim_stats.get('exp_avg_sq').max))
-
-                    if grad_stats is not None:
-                        logger.info(
-                            '[%d, %5d] enc_grad_stats: f/l[%.2e %.2e] mn/mx(%.2e, %.2e) %.2e'
-                            % (epoch + 1, itr,
-                               grad_stats.first_layer,
-                               grad_stats.last_layer,
-                               grad_stats.min,
-                               grad_stats.max,
-                               grad_stats.global_norm))
-
-                    if grad_stats_pred is not None:
-                        logger.info(
-                            '[%d, %5d] pred_grad_stats: f/l[%.2e %.2e] mn/mx(%.2e, %.2e) %.2e'
-                            % (epoch + 1, itr,
-                               grad_stats_pred.first_layer,
-                               grad_stats_pred.last_layer,
-                               grad_stats_pred.min,
-                               grad_stats_pred.max,
-                               grad_stats_pred.global_norm))
+                # Modern TQDM Progress Bar Logging
+                pbar.set_postfix({
+                    'Loss': f'{loss_meter.avg:.3f}',
+                    'JEPA': f'{jepa_loss_meter.avg:.3f}',
+                    'Reg': f'{reg_loss_meter.avg:.3f}',
+                    'LR': f'{_new_lr:.2e}'
+                })
 
             log_stats()
             assert not np.isnan(loss), 'loss is nan'

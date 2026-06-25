@@ -73,7 +73,7 @@ config['data']['datasets'] = ['./ucf101.csv']
 config['logging']['folder'] = './logs'
 
 # Adjust for T4 GPU and Colab Environment
-config['data']['batch_size'] = 32
+config['data']['batch_size'] = 8  # Reduced from 32 to 8 to prevent CUDA Out Of Memory
 config['data']['num_workers'] = 2
 
 # Hyperparameter fixes for UCF-101 self-supervised pre-training
@@ -94,6 +94,7 @@ Run the training script!
 """))
 
 cells.append(nbf.v4.new_code_cell("""\
+!mkdir -p logs
 !python -m app.train_nano_jepa --fname configs/pretrain/vitt16.yaml
 """))
 
