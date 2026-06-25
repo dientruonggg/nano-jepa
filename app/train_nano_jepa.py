@@ -142,17 +142,28 @@ def execute_training_work(fname):
     use_sdpa = params['meta']['use_sdpa']
 
     # device
-    if not torch.cuda.is_available():
-        device = torch.device('cpu')
-    else:
-        device = torch.device('cuda:0')
+    if 'LOCAL_RANK' in os.environ:
+        import torch.distributed as dist
+        dist.init_process_group("nccl")
+        rank = dist.get_rank()
+        world_size = dist.get_world_size()
+        local_rank = int(os.environ['LOCAL_RANK'])
+        device = torch.device(f'cuda:{local_rank}')
         torch.cuda.set_device(device)
+    else:
+        world_size = 1
+        rank = 0
+        local_rank = 0
+        if not torch.cuda.is_available():
+            device = torch.device('cpu')
+        else:
+            device = torch.device('cuda:0')
+            torch.cuda.set_device(device)
 
-    logger.info(f'Using device {device}')
+    if rank != 0:
+        logger.setLevel(logging.WARNING)
 
-    # one cluster node
-    world_size = 1
-    rank = 0
+    logger.info(f'Using device {device} (Rank {rank}/{world_size})')
 
     # -- LOGGING
     cfgs_logging = params['logging']
@@ -195,6 +206,11 @@ def execute_training_work(fname):
         use_sdpa=use_sdpa,
     )
     target_encoder = copy.deepcopy(encoder)
+
+    if world_size > 1:
+        from torch.nn.parallel import DistributedDataParallel as DDP
+        encoder = DDP(encoder, device_ids=[local_rank])
+        predictor = DDP(predictor, device_ids=[local_rank])
 
     # -- make data transforms
     if mask_type == 'multiblock3d':
@@ -294,9 +310,13 @@ def execute_training_work(fname):
         )
 
     def save_checkpoint(epoch, path):
+        if rank != 0:
+            return
+        enc_state = encoder.module.state_dict() if world_size > 1 else encoder.state_dict()
+        pred_state = predictor.module.state_dict() if world_size > 1 else predictor.state_dict()
         save_dict = {
-            'encoder': encoder.state_dict(),
-            'predictor': predictor.state_dict(),
+            'encoder': enc_state,
+            'predictor': pred_state,
             'opt': optimizer.state_dict(),
             'scaler': None if scaler is None else scaler.state_dict(),
             'target_encoder': target_encoder.state_dict(),
@@ -332,6 +352,7 @@ def execute_training_work(fname):
 
         # -- update distributed-data-loader epoch
         unsupervised_sampler.set_epoch(epoch)
+        pbar = tqdm(range(ipe), desc=f'Epoch {epoch + 1}/{num_epochs}', unit='batch') if rank == 0 else None
 
         loss_meter = AverageMeter()
         input_var_meter = AverageMeter()
@@ -342,8 +363,8 @@ def execute_training_work(fname):
         gpu_time_meter = AverageMeter()
         wall_time_meter = AverageMeter()
 
-        pbar = tqdm(range(ipe), desc=f'Epoch {epoch + 1}/{num_epochs}', leave=True, bar_format='{l_bar}{bar:40}{r_bar}')
-        for itr in pbar:
+        pbar = tqdm(range(ipe), desc=f'Epoch {epoch + 1}/{num_epochs}', leave=True, bar_format='{l_bar}{bar:40}{r_bar}') if rank == 0 else None
+        for itr in (pbar if pbar is not None else range(ipe)):
             itr_start_time = time.time()
 
             try:
@@ -452,7 +473,8 @@ def execute_training_work(fname):
                 # Step 3. momentum update of target encoder
                 m = next(momentum_scheduler)
                 with torch.no_grad():
-                    for param_q, param_k in zip(encoder.parameters(), target_encoder.parameters()):
+                    enc_params = encoder.module.parameters() if world_size > 1 else encoder.parameters()
+                    for param_q, param_k in zip(enc_params, target_encoder.parameters()):
                         param_k.data.mul_(m).add_((1. - m) * param_q.detach().data)
 
                 return (
@@ -492,12 +514,13 @@ def execute_training_work(fname):
                     gpu_etime_ms,
                     iter_elapsed_time_ms)
                 # Modern TQDM Progress Bar Logging
-                pbar.set_postfix({
-                    'Loss': f'{loss_meter.avg:.3f}',
-                    'JEPA': f'{jepa_loss_meter.avg:.3f}',
-                    'Reg': f'{reg_loss_meter.avg:.3f}',
-                    'LR': f'{_new_lr:.2e}'
-                })
+                if pbar is not None:
+                    pbar.set_postfix({
+                        'Loss': f'{loss_meter.avg:.3f}',
+                        'JEPA': f'{jepa_loss_meter.avg:.3f}',
+                        'Reg': f'{reg_loss_meter.avg:.3f}',
+                        'LR': f'{_new_lr:.2e}'
+                    })
 
             log_stats()
             assert not np.isnan(loss), 'loss is nan'
