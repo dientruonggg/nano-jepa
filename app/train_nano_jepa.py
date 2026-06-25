@@ -13,7 +13,7 @@ import yaml
 from tqdm import tqdm
 
 from app.vjepa.transforms import make_transforms
-from app.vjepa.utils import init_opt, init_video_model
+from app.vjepa.utils import init_opt, init_video_model, load_checkpoint
 from src.datasets.data_manager import init_data
 from src.masks.multiblock3d import MaskCollator as MB3DMaskCollator
 from src.masks.random_tube import MaskCollator as TubeMaskCollator
@@ -58,6 +58,8 @@ def execute_training_work(fname):
 
     # META
     cfgs_meta = params['meta']
+    load_ckpt = cfgs_meta.get('load_checkpoint', False)
+    read_ckpt = cfgs_meta.get('read_checkpoint', None)
     save_every_freq = cfgs_meta.get('save_every_freq', -1)
     skip_batches = cfgs_meta.get('skip_batches', -1)
     use_sdpa = cfgs_meta.get('use_sdpa', False)
@@ -273,6 +275,23 @@ def execute_training_work(fname):
     momentum_scheduler = (ema[0] + i * (ema[1] - ema[0]) / (ipe * num_epochs * ipe_scale)
                           for i in range(int(ipe * num_epochs * ipe_scale) + 1))
     start_epoch = 0
+    if load_ckpt and read_ckpt is not None:
+        logger.info(f'Attempting to resume from checkpoint: {read_ckpt}')
+        (
+            encoder,
+            predictor,
+            target_encoder,
+            optimizer,
+            scaler,
+            start_epoch,
+        ) = load_checkpoint(
+            read_ckpt,
+            encoder,
+            predictor,
+            target_encoder,
+            optimizer,
+            scaler,
+        )
 
     def save_checkpoint(epoch, path):
         save_dict = {
