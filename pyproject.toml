@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nano-jepa"
+version = "0.0.1"
+description = "nano-JEPA: a Video Joint Embedding Predictive Architecture that runs in a regular computer."
+requires-python = ">=3.9"
+dependencies = [
+    "beartype>=0.22.2",
+    "braceexpand>=0.1.7",
+    "decord>=0.6.0",
+    "einops>=0.8.2",
+    "matplotlib>=3.9.4",
+    "numpy>=2.0.2",
+    "opencv-python>=4.13.0.92",
+    "pandas>=2.3.3",
+    "pyyaml>=6.0.3",
+    "submitit>=1.5.4",
+    "timm>=1.0.27",
+    "webdataset>=0.2.100",
+]
+
+[tool.pyright]
+extraPaths = ["."]

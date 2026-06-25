@@ -7,3 +7,11 @@ dist/
 *-info/
 
 .idea/
+
+# Ignore model checkpoints and other heavy or environment-specific files
+*.pth
+*.pth.tar
+logs/
+sample_videos/
+.venv/
+uv.lock

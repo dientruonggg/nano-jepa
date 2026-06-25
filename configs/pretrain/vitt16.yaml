@@ -4,9 +4,9 @@ tasks_per_node: 1
 data:
   dataset_type: VideoDataset
   datasets:
-    - /home/your-user/ML-datasets/video_datasets/nano-train.csv
+    - /home/bim/Documents/JEPA/nano-jepa/nano-train.csv
   decode_one_clip: true
-  batch_size: 8
+  batch_size: 2
   num_clips: 1
   num_frames: 16
   tubelet_size: 2
@@ -28,11 +28,11 @@ data_aug:
   - 1.0
   reprob: 0.0
 logging:
-  folder: /home/your-user/ML-logging
+  folder: /home/bim/Documents/JEPA/nano-jepa/logs
   write_tag: jepa
 loss:
   loss_exp: 1.0
-  reg_coeff: 0.0
+  reg_coeff: 0.3
 mask:
   - aspect_ratio:
       - 0.75
@@ -78,7 +78,7 @@ optimization:
   clip_grad: 10.0
   weight_decay: 0.04
   final_weight_decay: 0.4
-  epochs: 4
+  epochs: 100
   warmup: 40
   start_lr: 0.0002
   lr: 0.000625
