@@ -10,6 +10,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import yaml
+import warnings
+warnings.filterwarnings("ignore")
 from tqdm import tqdm
 
 from app.vjepa.transforms import make_transforms
@@ -478,9 +480,9 @@ def execute_training_work(fname):
                         param_k.data.mul_(m).add_((1. - m) * param_q.detach().data)
 
                 return (
-                    float(loss),
-                    float(loss_jepa),
-                    float(loss_reg),
+                    float(loss.detach()),
+                    float(loss_jepa.detach()),
+                    float(loss_reg.detach()),
                     _new_lr,
                     _new_wd,
                     grad_stats,
