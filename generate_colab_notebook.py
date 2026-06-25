@@ -77,7 +77,6 @@ config['data']['batch_size'] = 8  # Reduced from 32 to 8 to prevent CUDA Out Of 
 config['data']['num_workers'] = 2
 
 # Hyperparameter fixes for UCF-101 self-supervised pre-training
-config['loss']['reg_coeff'] = 0.3
 config['optimization']['epochs'] = 300
 config['optimization']['warmup'] = 30
 config['optimization']['ipe'] = None  # Dynamic steps per epoch
