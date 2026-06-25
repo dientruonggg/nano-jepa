@@ -354,7 +354,6 @@ def execute_training_work(fname):
 
         # -- update distributed-data-loader epoch
         unsupervised_sampler.set_epoch(epoch)
-        pbar = tqdm(range(ipe), desc=f'Epoch {epoch + 1}/{num_epochs}', unit='batch') if rank == 0 else None
 
         loss_meter = AverageMeter()
         input_var_meter = AverageMeter()
@@ -365,7 +364,7 @@ def execute_training_work(fname):
         gpu_time_meter = AverageMeter()
         wall_time_meter = AverageMeter()
 
-        pbar = tqdm(range(ipe), desc=f'Epoch {epoch + 1}/{num_epochs}', leave=True, bar_format='{l_bar}{bar:40}{r_bar}') if rank == 0 else None
+        pbar = tqdm(range(ipe), desc=f'Epoch {epoch + 1}/{num_epochs}', leave=True, bar_format='{l_bar}{bar:40}{r_bar}', mininterval=5.0) if rank == 0 else None
         for itr in (pbar if pbar is not None else range(ipe)):
             itr_start_time = time.time()
 
