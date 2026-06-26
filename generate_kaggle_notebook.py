@@ -96,8 +96,9 @@ config['data']['datasets'] = ['./ucf101.csv']
 config['logging']['folder'] = './logs'
 
 # Adjust for Kaggle GPU Environment
-config['data']['batch_size'] = 8  # Safe batch size for 16GB VRAM
+config['data']['batch_size'] = 32 # T4 16GB can handle much more than 8 for vit_tiny
 config['data']['num_workers'] = 4 # Kaggle has 4 CPU cores
+config['meta']['dtype'] = 'float16' # T4 does NOT support bfloat16 hardware acceleration!
 
 # Hyperparameter fixes for UCF-101 self-supervised pre-training
 config['optimization']['epochs'] = 300
