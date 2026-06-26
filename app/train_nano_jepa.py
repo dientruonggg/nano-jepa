@@ -518,9 +518,9 @@ def execute_training_work(fname):
                 if pbar is not None:
                     pbar.set_postfix({
                         'Loss': f'{loss_meter.avg:.3f}',
-                        'JEPA': f'{jepa_loss_meter.avg:.3f}',
-                        'Reg': f'{reg_loss_meter.avg:.3f}',
-                        'LR': f'{_new_lr:.2e}'
+                        'JEPA Loss': f'{jepa_loss_meter.avg:.3f}',
+                        'LR': f'{_new_lr:.2e}',
+                        'Var': f'{input_var_meter.avg:.3f}',
                     })
 
             log_stats()
