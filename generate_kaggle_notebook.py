@@ -96,7 +96,7 @@ config['data']['datasets'] = ['./ucf101.csv']
 config['logging']['folder'] = './logs'
 
 # Adjust for Kaggle GPU Environment
-config['data']['batch_size'] = 32 # T4 16GB can handle much more than 8 for vit_tiny
+config['data']['batch_size'] = 16 # Safely increased, 32 causes OOM on 16GB
 config['data']['num_workers'] = 4 # Kaggle has 4 CPU cores
 config['meta']['dtype'] = 'float16' # T4 does NOT support bfloat16 hardware acceleration!
 

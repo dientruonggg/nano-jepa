@@ -44,19 +44,27 @@ def load_checkpoint(
 
         # -- loading encoder
         pretrained_dict = checkpoint['encoder']
-        msg = encoder.load_state_dict(pretrained_dict)
+        if hasattr(encoder, 'module'):
+            msg = encoder.module.load_state_dict(pretrained_dict)
+        else:
+            msg = encoder.load_state_dict(pretrained_dict)
         logger.info(f'loaded pretrained encoder from epoch {epoch} with msg: {msg}')
 
         # -- loading predictor
         pretrained_dict = checkpoint['predictor']
-        msg = predictor.load_state_dict(pretrained_dict)
+        if hasattr(predictor, 'module'):
+            msg = predictor.module.load_state_dict(pretrained_dict)
+        else:
+            msg = predictor.load_state_dict(pretrained_dict)
         logger.info(f'loaded pretrained predictor from epoch {epoch} with msg: {msg}')
 
         # -- loading target_encoder
         if target_encoder is not None:
-            print(list(checkpoint.keys()))
             pretrained_dict = checkpoint['target_encoder']
-            msg = target_encoder.load_state_dict(pretrained_dict)
+            if hasattr(target_encoder, 'module'):
+                msg = target_encoder.module.load_state_dict(pretrained_dict)
+            else:
+                msg = target_encoder.load_state_dict(pretrained_dict)
             logger.info(
                 f'loaded pretrained target encoder from epoch {epoch} with msg: {msg}'
             )
