@@ -37,6 +37,8 @@ parser.add_argument(
 
 # Example usage
 def execute_training_work(fname):
+    import time
+    global_start_time = time.time()
     logger = get_logger(force=True)
     logger.setLevel(logging.INFO)
 
@@ -536,6 +538,12 @@ def execute_training_work(fname):
                 save_every_file = f'{tag}-e{epoch}.pth.tar'
                 save_every_path = os.path.join(folder, save_every_file)
                 save_checkpoint(epoch + 1, save_every_path)
+
+        # -- Check timeout for Kaggle 12-hour limit
+        elapsed_time = time.time() - global_start_time
+        if elapsed_time > 11.5 * 3600:
+            logger.info("Approaching 12h limit. Stopping gracefully to preserve Kaggle output files.")
+            break
 
 
 if __name__ == "__main__":
