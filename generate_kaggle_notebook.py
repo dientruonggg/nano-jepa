@@ -129,6 +129,9 @@ with open(config_path, 'r') as f:
 
 # Find the latest checkpoint
 checkpoints = glob.glob(f'{logs_dir}/*-latest.pth.tar')
+checkpoints.extend(glob.glob('/kaggle/input/*/logs/*-latest.pth.tar')) # Also check Kaggle datasets/previous outputs
+checkpoints.extend(glob.glob('/kaggle/input/*/*/logs/*-latest.pth.tar')) # Check deeper Kaggle structures
+
 if checkpoints:
     latest_ckpt = max(checkpoints, key=os.path.getmtime)
     print(f"Found existing checkpoint: {latest_ckpt}")
