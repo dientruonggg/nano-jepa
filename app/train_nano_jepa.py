@@ -543,6 +543,7 @@ def execute_training_work(fname):
         elapsed_time = time.time() - global_start_time
         if elapsed_time > 11.5 * 3600:
             logger.info("Approaching 12h limit. Stopping gracefully to preserve Kaggle output files.")
+            save_checkpoint(epoch + 1, latest_path)
             break
 
 
