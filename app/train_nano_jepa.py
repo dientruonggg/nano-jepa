@@ -187,6 +187,7 @@ def execute_training_work(fname):
         ('%.5f', 'loss'),
         ('%.5f', 'loss-jepa'),
         ('%.5f', 'reg-loss'),
+        ('%.2e', 'lr'),
         ('%.5f', 'enc-grad-norm'),
         ('%.5f', 'pred-grad-norm'),
         ('%d', 'gpu-time(ms)'),
@@ -312,6 +313,13 @@ def execute_training_work(fname):
             optimizer,
             scaler,
         )
+
+        if start_epoch > 0:
+            logger.info(f'Fast-forwarding schedulers to epoch {start_epoch} (step {start_epoch * ipe})')
+            for _ in range(start_epoch * ipe):
+                scheduler.step()
+                wd_scheduler.step()
+                next(momentum_scheduler)
 
     def save_checkpoint(epoch, path):
         if rank != 0:
@@ -512,6 +520,7 @@ def execute_training_work(fname):
                     loss,
                     loss_jepa,
                     loss_reg,
+                    _new_lr,
                     grad_stats.global_norm,
                     grad_stats_pred.global_norm,
                     gpu_etime_ms,
@@ -529,7 +538,7 @@ def execute_training_work(fname):
             assert not np.isnan(loss), 'loss is nan'
 
         # -- Save Checkpoint
-        logger.info('avg. loss %.3f' % loss_meter.avg)
+        logger.info('avg. loss %.3f, lr %.2e' % (loss_meter.avg, _new_lr))
 
         # -- Save Last
         if epoch % checkpoint_freq == 0 or epoch == (num_epochs - 1):
